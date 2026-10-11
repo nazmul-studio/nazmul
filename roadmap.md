@@ -1,0 +1,18 @@
+# Portfolio roadmap
+- [x] Reuse the supplied Kage scene with Nazmul wordmark and GSAP camera travel.
+- [x] Add a blue-lit opening 3D grimoire with animated achievement pages.
+- [x] Build five portfolio chapters and mobile navigation.
+- [x] Build a no-auth content studio with live preview and session-only editing.
+- [x] Verify desktop, mobile, book controls, and content editing.
+- [x] Remove screen grain, color fringing, blur and resolution downscaling.
+- [x] Enlarge the book; correct cover/page turns, rapid navigation and chapter framing.
+- [x] Verify clear desktop/mobile rendering and book navigation.
+- [x] Fix the book position and provide 15 blank, two-sided editable pages.
+- [x] Ground the name letters on uneven mountain slopes.
+- [x] Verify page editing, book framing and mountain placement.
+- [x] Phase 12–14: remove duplicated scroll smoothing and cache chapter positions.
+- [x] Phase 12–14: cap mobile DPR at 1.5, reduce rendering overhead, and clean up scene resources.
+- [x] Phase 12–14: optimize editor thumbnails and verify desktop/mobile book interactions and tests.
+- [x] Phase 13: larger touch handles, pinch-zoom and pan on mobile/tablet editor.
+- [x] Phase 14: all tests pass; production storage never silently faked.
+- [ ] Production sign-in → edit → publish verification (requires configured Studio secrets and KV).
