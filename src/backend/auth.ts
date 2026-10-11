@@ -1,5 +1,5 @@
 // Server-only: password check and signed, stateless session cookies (WebCrypto only).
-import { getSecret } from "./env";
+import { getSecret, similarBindingNames } from "./env";
 
 export const SESSION_TTL = 7 * 24 * 60 * 60; // seconds
 export const MIN_PASSWORD = 12;
@@ -9,7 +9,7 @@ const enc = new TextEncoder();
 
 export type SecretsState =
   | { ready: true; password: string; sessionSecret: string }
-  | { ready: false; missing: string[] };
+  | { ready: false; missing: string[]; hints: string[] };
 
 /** Both secrets must be present and long enough, otherwise the admin stays locked. */
 export async function loadSecrets(): Promise<SecretsState> {
@@ -22,7 +22,30 @@ export async function loadSecrets(): Promise<SecretsState> {
   if (!password || password.length < MIN_PASSWORD) missing.push(`ADMIN_PASSWORD (at least ${MIN_PASSWORD} characters)`);
   if (!sessionSecret || sessionSecret.length < MIN_SESSION_SECRET)
     missing.push(`SESSION_SECRET (at least ${MIN_SESSION_SECRET} characters)`);
-  return { ready: false, missing };
+  return { ready: false, missing, hints: await secretHints([["ADMIN_PASSWORD", MIN_PASSWORD, password], ["SESSION_SECRET", MIN_SESSION_SECRET, sessionSecret]]) };
+}
+
+/**
+ * Plain-language reasons for each secret that is not usable, so a typo or a missing deploy is obvious. Only for secrets
+ * that are NOT usable (a working one is never mentioned), and only names and lengths: never a value. These reach the
+ * browser only while the Studio is locked, when nobody can sign in anyway.
+ */
+async function secretHints(secrets: Array<[string, number, string | undefined]>): Promise<string[]> {
+  const hints: string[] = [];
+  for (const [name, min, value] of secrets) {
+    if (value && value.length >= min) continue;
+    if (value) {
+      hints.push(`${name} reached the server but is only ${value.length} characters long; it needs at least ${min}.`);
+      continue;
+    }
+    const similar = await similarBindingNames(name);
+    hints.push(
+      similar.length > 0
+        ? `No variable named exactly ${name} reached the server. It did receive: ${similar.join(", ")}. Rename that one to ${name}.`
+        : `No variable named ${name} reached the server. If you just added it, deploy that change and reload; otherwise check the name.`,
+    );
+  }
+  return hints;
 }
 
 function toB64url(bytes: Uint8Array): string {

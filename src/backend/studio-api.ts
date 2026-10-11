@@ -76,7 +76,7 @@ async function currentSession(request: Request, sessionSecret: string, kv: Await
 /** Returns a response when the caller may not proceed, or null when they are signed in. */
 async function authorize(request: Request): Promise<Response | null> {
   const secrets = await loadSecrets();
-  if (!secrets.ready) return json({ error: "not_configured", missing: secrets.missing }, 503);
+  if (!secrets.ready) return json({ error: "not_configured", missing: secrets.missing, hints: secrets.hints }, 503);
   const kv = await getStorage();
   if (!kv) return json({ error: "not_configured", missing: ["CONTENT (KV namespace binding)"] }, 503);
   if (!(await currentSession(request, secrets.sessionSecret, kv))) return json({ error: "unauthorized" }, 401);
@@ -89,7 +89,7 @@ async function session(request: Request): Promise<Response> {
   if (!secrets.ready || !storage) {
     const missing = secrets.ready ? [] : [...secrets.missing];
     if (!storage) missing.push("CONTENT (KV namespace binding)");
-    return json({ authenticated: false, configured: false, missing });
+    return json({ authenticated: false, configured: false, missing, hints: secrets.ready ? [] : secrets.hints });
   }
   const current = await currentSession(request, secrets.sessionSecret, storage);
   return json({ authenticated: current !== null, configured: true });
@@ -102,7 +102,7 @@ async function login(request: Request): Promise<Response> {
   if (!secrets.ready || !kv) {
     const missing = secrets.ready ? [] : [...secrets.missing];
     if (!kv) missing.push("CONTENT (KV namespace binding)");
-    return json({ error: "not_configured", missing }, 503);
+    return json({ error: "not_configured", missing, hints: secrets.ready ? [] : secrets.hints }, 503);
   }
   const ip = clientIp(request);
   if ((await countFailures(kv, ip)) >= MAX_FAILURES) {

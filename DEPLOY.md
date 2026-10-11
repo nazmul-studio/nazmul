@@ -118,6 +118,9 @@ Worker → Settings → Domains & Routes → Add → Custom domain (ডোমে
 - সাইন-আউট পরীক্ষা: Sign out করে আগের কুকি দিয়ে `/api/studio/content` ডাকলে `401` আসা উচিত
 
 ## Troubleshooting
+
+- **Studio-তে "The studio is locked until the server is set up" দেখালে:** বার্তার নিচের লাইনগুলো পড়ুন, সার্ভার আসলে কী পেয়েছে সেটাই বলে (শুধু নাম ও দৈর্ঘ্য, কখনও মান নয়, আর শুধু Studio তালাবদ্ধ থাকলে)। যেমন: "No variable named SESSION_SECRET reached the server. It did receive: SESSION_SECERT. Rename that one to SESSION_SECRET." (নামে ভুল), "…only 20 characters long; it needs at least 32." (খাটো মান), বা "…If you just added it, deploy that change and reload." (ডিপ্লয় বাকি)। ড্যাশবোর্ডে সিক্রেট বসালে নতুন ভার্সন ডিপ্লয় হওয়া পর্যন্ত চলমান সাইট সেটা দেখে না।
+- সিক্রেটের নামে বড়/ছোট হাতের অক্ষর, স্পেস, `-` ও `_` এর তফাত এখন গ্রহণযোগ্য (`Session_Secret` বা `SESSION-SECRET ` চলবে)। ঠিক নামটা থাকলে সেটাই অগ্রাধিকার পায়। তবু ঠিক `SESSION_SECRET` ও `ADMIN_PASSWORD` লেখাই ভালো।
 - **`Missing .output/server/wrangler.json`:** বিল্ড Workers-ফরম্যাটে আউটপুট দেয়নি। স্ক্রিপ্ট `.output`-এর ফাইলের নাম দেখাবে, সেটা সহ জানান।
 - **Studio বলছে `CONTENT` নেই:** `cloudflare.json`-এ id বসেনি, বা id ভুল। অথবা Worker-এর কোডে বাইন্ডিং পৌঁছাচ্ছে না। `/api/studio/session` এর `missing` দেখুন, আর `wrangler tail` চালিয়ে লগ দেখুন।
 - **সিক্রেট দিয়েও লক:** `ADMIN_PASSWORD` ১২+ ও `SESSION_SECRET` ৩২+ অক্ষর কি না দেখুন। তারপর একবার আবার ডিপ্লয় করুন।

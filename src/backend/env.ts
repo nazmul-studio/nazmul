@@ -127,9 +127,50 @@ export async function getKV(): Promise<KVLike | null> {
   return isKV(value) ? value : null;
 }
 
+/** Upper-cases and drops everything but letters and digits: "Session_Secret", "SESSION-SECRET " and "SESSION_SECRET" match. */
+export const normalizeName = (name: string): string => name.toUpperCase().replace(/[^A-Z0-9]/g, "");
+
+/** Number of single-character edits between two short strings. */
+function editDistance(a: string, b: string): number {
+  let previous = Array.from({ length: b.length + 1 }, (_, i) => i);
+  for (let i = 1; i <= a.length; i++) {
+    const row = [i];
+    for (let j = 1; j <= b.length; j++) {
+      row[j] = Math.min((previous[j] as number) + 1, (row[j - 1] as number) + 1, (previous[j - 1] as number) + (a[i - 1] === b[j - 1] ? 0 : 1));
+    }
+    previous = row;
+  }
+  return previous[b.length] as number;
+}
+
+/** A secret by its exact name. If there is none, one whose name differs only in case, spaces, dashes or underscores. */
 export async function getSecret(name: string): Promise<string | undefined> {
-  const value = await getBinding(name);
-  return typeof value === "string" ? value : undefined;
+  const exact = await getBinding(name);
+  if (typeof exact === "string") return exact;
+  // A variable typed on a phone as "Session_Secret" or "SESSION_SECRET " is plainly meant to be SESSION_SECRET.
+  const wanted = normalizeName(name);
+  for (const bag of await bags()) {
+    for (const [key, value] of Object.entries(bag)) {
+      if (normalizeName(key) === wanted && typeof value === "string" && value !== "") return value;
+    }
+  }
+  return undefined;
+}
+
+/**
+ * Names (never values) of variables this Worker received that look like a mistyped `name`: close, but not close
+ * enough to be accepted by getSecret. Used only to tell the owner what to fix while the Studio is still locked.
+ */
+export async function similarBindingNames(name: string): Promise<string[]> {
+  const wanted = normalizeName(name);
+  const found = new Set<string>();
+  for (const bag of await bags()) {
+    for (const key of Object.keys(bag)) {
+      const n = normalizeName(key);
+      if (n !== wanted && n.length > 0 && editDistance(n, wanted) <= 3) found.add(key);
+    }
+  }
+  return [...found].slice(0, 5);
 }
 
 function isR2(value: unknown): value is R2Like {

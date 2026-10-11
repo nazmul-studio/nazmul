@@ -4,7 +4,7 @@ import type { PortfolioContent } from "./content-model";
 import type { Issue } from "./content-schema";
 import { MAX_DIMENSION, MAX_PIXELS, MAX_UPLOAD_BYTES } from "./media";
 
-export type SessionInfo = { authenticated: boolean; configured: boolean; missing?: string[] };
+export type SessionInfo = { authenticated: boolean; configured: boolean; missing?: string[]; hints?: string[] };
 export type AdminContent = { version: number; updatedAt: string | null; note?: string; content: PortfolioContent };
 export type Revision = { version: number; updatedAt: string; note?: string; content: PortfolioContent };
 
