@@ -15,11 +15,11 @@ import { reportLovableError } from "../lib/lovable-error-reporting";
 import { ContentProvider, initialContent } from "../lib/portfolio-content";
 import { getSiteContent } from "../lib/site-content";
 import { SITE_URL } from "../lib/site";
-import { mediaNameOfKey, mediaUrl } from "../lib/media";
+import { Button } from "@/components/ui/button";
 
 function NotFoundComponent() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
+    <div className="flex min-h-dvh items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
         <h1 className="text-7xl font-bold text-foreground">404</h1>
         <h2 className="mt-4 text-xl font-semibold text-foreground">Page not found</h2>
@@ -47,7 +47,7 @@ function ErrorComponent({ error, reset }: ErrorComponentProps) {
   }, [error]);
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
+    <div className="flex min-h-dvh items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
         <h1 className="text-xl font-semibold tracking-tight text-foreground">
           This page didn't load
@@ -56,7 +56,7 @@ function ErrorComponent({ error, reset }: ErrorComponentProps) {
           Something went wrong on our end. You can try refreshing or head back home.
         </p>
         <div className="mt-6 flex flex-wrap justify-center gap-2">
-          <button
+          <Button
             onClick={() => {
               router.invalidate();
               reset();
@@ -64,7 +64,7 @@ function ErrorComponent({ error, reset }: ErrorComponentProps) {
             className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
           >
             Try again
-          </button>
+          </Button>
           <a
             href="/"
             className="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent"
@@ -86,12 +86,6 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     const content = loaderData?.content ?? initialContent;
     const seoTitle = content.site?.seoTitle || initialContent.site.seoTitle;
     const seoDescription = content.site?.seoDescription ?? initialContent.site.seoDescription;
-    // Own image if the owner set one (Studio → Site text & SEO); otherwise the bundled one, when the public URL is known.
-    // An uploaded image is a path on this site, but link previews need an absolute address.
-    const chosen = content.site?.ogImage ?? "";
-    const uploaded = mediaNameOfKey(chosen);
-    const customImage = uploaded ? (SITE_URL ? `${SITE_URL}${mediaUrl(uploaded)}` : "") : chosen;
-    const ogImage = customImage || (SITE_URL ? `${SITE_URL}/og-image.jpg` : "");
     return {
     meta: [
       { charSet: "utf-8" },
@@ -103,14 +97,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { property: "og:description", content: seoDescription },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
-      ...(ogImage
-        ? [
-            { property: "og:image", content: ogImage },
-            { name: "twitter:image", content: ogImage },
-            // The bundled image is known to be 1200×630; a custom one is not, so no size is claimed for it.
-            ...(customImage ? [] : [{ property: "og:image:width", content: "1200" }, { property: "og:image:height", content: "630" }]),
-          ]
-        : []),
+
     ],
     links: [
       {
@@ -151,7 +138,7 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-      <ContentProvider initial={site.content} version={site.version}><Outlet /></ContentProvider>
+      <ContentProvider initial={site.content} version={site.version}><main id="portfolio-main" tabIndex={-1}><Outlet /></main></ContentProvider>
     </QueryClientProvider>
   );
 }

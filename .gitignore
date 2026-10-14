@@ -30,7 +30,3 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
-
-# Never commit: editor/workspace internals (contain git credentials) and build cache
-.workspace/
-tsconfig.tsbuildinfo

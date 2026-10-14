@@ -337,13 +337,12 @@ footer>a {display:flex;align-items:center;gap:8px;}
 /* ---- RGB live typing text ---- */
 @property --hue{syntax:'<angle>';inherits:true;initial-value:0deg;}
 @keyframes rgb-spin{to{--hue:360deg;}}
-.rgb-live{background:linear-gradient(90deg,oklch(.78 .16 calc(var(--hue) + 0deg)),oklch(.78 .16 calc(var(--hue) + 120deg)),oklch(.78 .16 calc(var(--hue) + 240deg)));-webkit-background-clip:text;background-clip:text;color:transparent;animation:rgb-spin 6s linear infinite;}
+.rgb-live{background:linear-gradient(90deg,#ff8f7a,#ffd27a,#7affb2,#7ab8ff);background:linear-gradient(90deg,oklch(.78 .16 calc(var(--hue) + 0deg)),oklch(.78 .16 calc(var(--hue) + 120deg)),oklch(.78 .16 calc(var(--hue) + 240deg)));-webkit-background-clip:text;background-clip:text;color:transparent;animation:rgb-spin 6s linear infinite;}
 .typed{white-space:pre-line;}
 .caret{display:inline-block;width:.08em;height:.9em;margin-left:2px;vertical-align:-.1em;background:currentColor;background:oklch(.78 .16 var(--hue));animation:caret-blink .8s steps(1) infinite;}
 .caret.done{opacity:0;animation:none;}
 @keyframes caret-blink{50%{opacity:0;}}
-.hero-copy h1,.chapter-copy h2,.contact-section h2{font-size:clamp(20px,2.6vw,34px)!important;line-height:1.25!important;}
-.hero-copy p,.chapter-copy p{font-size:clamp(10px,1vw,13px)!important;}
+
 .contact-section footer{justify-content:flex-start;}
 /* ---- three-line menu ---- */
 .menu-lines{position:relative;width:46px;height:46px;border-radius:50%;border:1px solid color-mix(in oklab,var(--foreground) 22%,transparent);background:color-mix(in oklab,var(--background) 40%,transparent);backdrop-filter:none;display:grid;place-items:center;cursor:pointer;transition:border-color .3s;}
@@ -457,4 +456,112 @@ footer>a {display:flex;align-items:center;gap:8px;}
 .be-rotate{width:calc(28px / var(--z));height:calc(28px / var(--z));margin-left:calc(-14px / var(--z));top:calc(-48px / var(--z));}
 .be-box:hover{outline:none;}
 .be-box.selected{outline-width:calc(3px / var(--z));}
+}
+
+/* Focused portfolio refinement — scene and chrome finishes remain original. */
+:root { --header-height:88px; --page-gutter:6%; --focus-color:var(--celestial); }
+#portfolio-main { outline:none; }
+.site-header { height:var(--header-height); padding-inline:var(--page-gutter); display:grid; grid-template-columns:minmax(0,1fr) auto; gap:20px; }
+.site-header>a { min-width:0; width:fit-content; min-height:44px; display:flex; align-items:center; }
+.brand { min-width:0; }
+.gate-symbol { flex-shrink:0; }
+.brand strong { font-size:12px; overflow-wrap:anywhere; line-height:1.5; }
+.menu-lines { flex-shrink:0; padding:0; }
+.chrome-menu { position:relative; inset:auto; max-height:calc(100dvh - var(--header-height) - 40px); max-width:calc(100vw - 40px); overflow-y:auto; overflow-x:hidden; padding:12px; z-index:40; }
+.chrome-menu nav { display:flex; flex-direction:column; gap:18px; align-items:flex-end; }
+.chrome-menu nav .chrome-cta:nth-child(2){animation-delay:.05s}.chrome-menu nav .chrome-cta:nth-child(3){animation-delay:.1s}.chrome-menu nav .chrome-cta:nth-child(4){animation-delay:.15s}.chrome-menu nav .chrome-cta:nth-child(5){animation-delay:.2s}
+.portfolio-content [data-chapter] { scroll-margin-top:calc(var(--header-height) + 16px); }
+.hero-section { height:auto; min-height:max(640px,95svh); }
+.hero-copy { position:relative; top:auto; left:auto; margin-left:var(--page-gutter); padding-top:max(150px,20svh); width:calc(100% - 2 * var(--page-gutter)); max-width:440px; padding-bottom:170px; }
+.hero-copy h1 { font-size:40px; line-height:1.2; margin:0 0 26px; max-width:440px; text-wrap:pretty; }
+.hero-copy p { font-size:14px; line-height:1.9; max-width:330px; margin:0; }
+.hero-bottom { bottom:100px; }
+.scroll-cta { width:44px; height:44px; justify-content:center; align-items:center; border:1px solid var(--border); border-radius:50%; }
+.typed { position:relative; display:block; overflow-wrap:anywhere; }
+.typed-measure { display:block; visibility:hidden; pointer-events:none; }
+.typed-visual { position:absolute; inset:0; background:inherit; -webkit-background-clip:text; background-clip:text; }
+.typed .caret { position:absolute; margin-left:2px; margin-top:.15em; }
+.eyebrow { font-size:10px; line-height:1.7; }
+.chapter-copy { min-width:0; }
+.chapter-copy h2 { font-size:42px; line-height:1.25; margin:22px 0 26px; }
+.chapter-copy p { font-size:15px; line-height:1.9; }
+.tome-heading h2 { font-size:35px; }
+.contact-section h2 { font-size:46px; }
+.chapter-dock { gap:16px; }
+.chapter-dock button { min-width:44px; min-height:44px; font-size:24px; }
+.sound-control button,.book-control button,.modal-close { min-width:44px; min-height:44px; }
+.project-item { min-width:0; }
+.project-meta { min-width:0; }
+.project-meta h3 { line-height:1.4; overflow-wrap:anywhere; }
+.project-meta span { font-size:10px; }
+.project-art { aspect-ratio:4/3; height:auto; }
+.social-links { flex-wrap:wrap; }
+.social-links a,.book-links a { min-height:44px; }
+.project-modal { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); z-index:61; max-width:650px; width:calc(100% - 40px); max-height:calc(100dvh - 40px); overflow:auto; border-radius:6px; }
+.portfolio :is(a,button):focus-visible,.chrome-menu button:focus-visible,.project-modal :is(a,button):focus-visible { outline:2px solid var(--focus-color); outline-offset:5px; }
+.portfolio [data-chapter]:focus { outline:none; }
+.skip-link { position:fixed; top:12px; left:20px; z-index:100; padding:12px 18px; background:var(--background); color:var(--foreground); transform:translateY(-160%); }
+.skip-link:focus { transform:translateY(0); }
+.is-preview .site-header { top:36px; }
+@media(min-width:1440px) { .hero-copy { max-width:500px; }.hero-copy h1 { font-size:44px; max-width:500px; } }
+@media(max-width:900px) { .chapter-copy h2 { font-size:36px; }.contact-section h2 { font-size:40px; }.project-grid { gap:20px; }.chapter-dock { gap:8px; } }
+@media(max-width:640px) {
+ :root { --header-height:76px; --page-gutter:7%; }
+ .site-header { gap:12px; }.brand strong { font-size:10px; }.brand { gap:10px; }
+ .hero-section { min-height:max(600px,95svh); }.hero-copy { right:auto; padding-top:130px; padding-bottom:190px; max-width:340px; }.hero-copy h1 { font-size:30px; margin:0 0 24px; }.hero-copy p { font-size:13px; max-width:290px; }
+ .chapter-copy h2,.contact-section h2 { font-size:30px; }.chapter-copy p { font-size:14px; }.eyebrow { font-size:9px; }
+ .chrome-menu nav { gap:14px; }.chrome-menu { padding:10px; }
+ .chapter-dock { left:4%; bottom:20px; gap:0; }.chapter-dock button { font-size:20px; }.sound-control { right:4%; bottom:20px; }
+ .project-item { grid-template-columns:88px minmax(0,1fr); gap:16px; }.project-art { height:112px; aspect-ratio:auto; }.project-meta h3 { font-size:18px; }.project-meta span { font-size:9px; }
+ .book-control { gap:20px; bottom:19%; }.tome-heading { top:calc(var(--header-height) + 24px); }.tome-heading h2 { font-size:26px; }.book-links { bottom:9%; }
+ .tech-list { gap:14px; }.social-links { gap:14px; }.project-modal { padding:48px 24px 28px; }
+}
+@media(max-height:500px) and (orientation:landscape) { .hero-copy { padding-top:110px; }.chrome-menu { max-height:calc(100dvh - 100px); }.grimoire-stage { min-height:500px; }.tome-heading { top:90px; }.book-control { bottom:18%; } }
+@media(prefers-reduced-motion:reduce) { html { scroll-behavior:auto!important; } *,*::before,*::after { animation:none!important; transition:none!important; scroll-behavior:auto!important; }.typed .caret { display:none; } }
+
+/* ======================================================================
+   Adaptive scene: instant poster, light mode, flat book, old-browser fallbacks
+   ====================================================================== */
+
+/* The night-sky poster is plain CSS (no oklch, no inset, no aspect-ratio) so it paints at once on any browser.
+   It is the backdrop in light mode and fades out when the 3D scene has drawn its first frame. */
+.sanctuary-poster{position:fixed;top:0;right:0;bottom:0;left:0;z-index:0;pointer-events:none;overflow:hidden;background:linear-gradient(#03050a 0%,#08111a 58%,#05090d 100%);transition:opacity .9s ease,visibility 0s linear .9s;}
+.sanctuary-poster.is-hidden{opacity:0;visibility:hidden;}
+.poster-moon{position:absolute;left:68%;top:22%;width:min(24vmin,180px);height:min(24vmin,180px);transform:translate(-50%,-50%);border-radius:50%;background:radial-gradient(circle at 40% 38%,#ff6a4d 0,#d0302b 55%,#7d1418 100%);box-shadow:0 0 60px 20px rgba(214,50,47,.28),0 0 160px 60px rgba(214,50,47,.12);}
+.poster-ridge{position:absolute;left:-5%;right:-5%;bottom:0;height:46%;background:#060b10;clip-path:polygon(0 62%,9% 48%,17% 58%,28% 36%,38% 52%,47% 40%,58% 55%,69% 30%,80% 50%,90% 42%,100% 56%,100% 100%,0 100%);}
+.poster-ridge.near{height:30%;background:#04070a;clip-path:polygon(0 55%,14% 40%,26% 58%,41% 34%,55% 56%,70% 38%,84% 54%,100% 44%,100% 100%,0 100%);}
+.poster-mist{position:absolute;left:0;right:0;bottom:18%;height:26%;background:linear-gradient(rgba(120,150,170,0),rgba(120,150,170,.07),rgba(120,150,170,0));}
+.poster-bar{position:absolute;left:0;top:0;width:100%;height:2px;background:#c9a24a;transform-origin:0 50%;transform:scaleX(0);opacity:0;transition:opacity .4s ease,transform .5s ease;}
+.sanctuary-poster.is-loading .poster-bar{opacity:.85;transform:scaleX(var(--boot,.04));}
+
+/* the canvas fades in over the poster */
+.sanctuary-canvas{opacity:0;transition:opacity .9s ease;}
+.sanctuary-canvas.is-ready{opacity:1;}
+
+/* lighter tiers drop decoration that costs paint time on every frame */
+html[data-tier="low"] .rgb-live,html[data-tier="lite"] .rgb-live{animation:none;}
+html[data-tier="lite"] .scene-shade{opacity:.2;}
+
+.scene-lite-note{position:fixed;left:12px;bottom:12px;z-index:40;min-height:44px;padding:0 14px;border:1px solid rgba(223,231,224,.22);border-radius:22px;background:rgba(5,8,12,.72);color:#dfe7e0;font:inherit;font-size:11px;letter-spacing:.12em;text-transform:uppercase;cursor:pointer;}
+.scene-lite-note:hover,.scene-lite-note:focus-visible{border-color:#c9a24a;color:#fff;}
+
+/* light mode: the achievement book as two flat pages, scrolling inside the sticky stage */
+.book-flat{position:absolute;left:0;right:0;top:calc(var(--header-height,88px) + 84px);bottom:30%;overflow-y:auto;display:flex;flex-direction:column;align-items:center;gap:14px;padding:0 16px;-webkit-overflow-scrolling:touch;}
+.book-flat-page{display:block;flex:none;width:min(88vw,340px);height:auto;border-radius:3px;box-shadow:0 12px 40px rgba(0,0,0,.55);}
+@media(min-width:900px){.book-flat{flex-direction:row;justify-content:center;align-items:flex-start;}.book-flat-page{width:auto;height:100%;max-width:44vw;}}
+
+/* Browsers without oklch() (Chrome before 111) cannot read the colour tokens above and would draw
+   dark text on a dark page. Same palette, spelled in hex. */
+@supports not (color: oklch(0.5 0.1 100)){
+  :root{
+    --background:#05080c;--foreground:#dfe7e0;
+    --card:#0b1118;--card-foreground:#dfe7e0;--popover:#0b1118;--popover-foreground:#dfe7e0;
+    --primary:#d33a2f;--primary-foreground:#f7f7f7;
+    --secondary:#121820;--secondary-foreground:#dfe7e0;--muted:#121820;--muted-foreground:#8a948c;
+    --accent:#171e27;--accent-foreground:#dfe7e0;
+    --border:rgba(223,231,224,.14);--input:rgba(223,231,224,.14);--ring:#d33a2f;
+    --celestial:#38bdf8;--gold:#c9a24a;--paper:#dfe7e0;--shade:rgba(5,8,12,.72);
+    --panel-shadow:0 24px 90px rgba(2,3,5,.55);
+  }
+  body{background-color:#05080c;color:#dfe7e0;}
 }

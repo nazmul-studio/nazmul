@@ -5,15 +5,32 @@ import { createTome } from './tome-scene';
    Everything on this page is generated at runtime: no photographs,
    no video, no external assets beyond three.js and two subset fonts.
    ===================================================================== */
-export function startSanctuary(canvas, wordmark, coverUrl, pages) {
+export function startSanctuary(canvas, wordmark, coverUrl, pages, quality = {}) {
 const THREE = Three;
+/* Quality plan from the host page (src/lib/device-tier.ts). Without one the scene behaves as it
+   always did. onProgress/onReady/onGiveUp let the page show feedback and fall back gracefully. */
+const Qp = Object.assign({ dprCap: 2, pixelBudget: 5e6, startScale: 1, minScale: .55, maxFps: 0, aniso: 8, bootBudgetMs: 0, strict: false }, quality.plan || {});
+const onProgress = quality.onProgress || (() => {});
+const onReady = quality.onReady || (() => {});
+const onGiveUp = quality.onGiveUp || (() => {});
+let gaveUp = false, disposedOnce = false, bootT0 = 0;
+function giveUp(reason) {
+  if (gaveUp || disposed) return;
+  gaveUp = true; running = false;
+  console.warn('[kage] giving up on the 3D scene:', reason);
+  onGiveUp(reason);
+}
 let externalProgress = 0; let book; let requestedPage = 0;
 
 /* ------------------------------------------------------------ 0 · basics */
 const Q      = new URLSearchParams(location.search);
 const qs     = (k, d) => { const v = Q.get(k); return v === null ? d : v; };
 const qn     = (k, d) => { const v = Q.get(k); return v === null ? d : parseFloat(v); };
-const REDUCE = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const motionPreference = matchMedia('(prefers-reduced-motion: reduce)');
+let REDUCE = motionPreference.matches;
+const onMotionPreference = () => { REDUCE = motionPreference.matches; if (running) queue(true); };
+motionPreference.addEventListener('change', onMotionPreference);
+let disposed = false;
 const COARSE = matchMedia('(hover: none)').matches;
 
 const clamp  = (v, a, b) => v < a ? a : (v > b ? b : v);
@@ -1060,21 +1077,27 @@ function texBranchCutout(seed) {
    size, aspect and pointer mapping below goes through these. */
 const vpW = () => document.documentElement.clientWidth  || innerWidth;
 const vpH = () => document.documentElement.clientHeight || innerHeight;
-let renderer, scene, camera, maxAniso = 1;
+let renderer, scene, camera, maxAniso = 1, lostHandler;
 const HI = 'low';
 const LOW = HI === 'low';
 const WANT_POST    = qs('post', '1') !== '0';
 const WANT_SHADOW  = qs('shadow', LOW ? '0' : '1') !== '0';
-const DPR_CAP = 2;
+const DPR_CAP = Qp.dprCap;
+/* display ratio, capped by tier and by a pixel budget so a big hi-dpi screen cannot ask for more
+   pixels than the tier can fill */
+const pixelRatio = () => Math.max(.5, Math.min(devicePixelRatio || 1, DPR_CAP, Math.sqrt(Qp.pixelBudget / Math.max(1, vpW() * vpH()))));
 /* the renderer trades resolution for frame rate on its own — the scene is
    fill-bound (five big alpha-blended veils plus a bloom chain), so pixels
    are the only knob worth turning on unknown hardware */
-const PERF = { scale: 1, acc: 0, n: 0, locked: true };
+const PERF = { scale: Qp.startScale, min: Qp.minScale, acc: 0, n: 0, good: 0, bad: 0, locked: false };
 
 function initGL() {
   if (qs('nogl', '0') !== '0' || !THREE) throw new Error('webgl disabled');
   renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: !WANT_POST, alpha: false, powerPreference: 'high-performance' });
-  renderer.setPixelRatio(Math.min(devicePixelRatio || 1, DPR_CAP));
+  renderer.setPixelRatio(pixelRatio() * PERF.scale);
+  /* under GPU memory pressure the browser takes the context away; carrying on would show a frozen frame */
+  lostHandler = e => { e.preventDefault(); giveUp('WebGL context lost'); };
+  canvas.addEventListener('webglcontextlost', lostHandler);
   /* updateStyle stays on: the stylesheet sizes the canvas at 100% of the
      initial containing block, which is the very box that runs wide on a
      phone. Writing the CSS size in pixels pins the element to the layout
@@ -1104,7 +1127,7 @@ function tx(canvasEl, o) {
   const t = new THREE.CanvasTexture(canvasEl);
   t.wrapS = t.wrapT = o.wrap || THREE.ClampToEdgeWrapping;
   if (o.repeat) t.repeat.set(o.repeat[0], o.repeat[1]);
-  t.anisotropy = Math.min(o.aniso || 8, maxAniso);
+  t.anisotropy = Math.min(o.aniso || 8, maxAniso, Qp.aniso);
   if (o.srgb !== false) t.encoding = THREE.sRGBEncoding;
   t.needsUpdate = true;
   return t;
@@ -2897,8 +2920,8 @@ function applyCamera() {
 
   /* parallax — a hand-held drift, never enough to break the frame */
   const par = 1 - smooth(0, 1.6, RIG.smooth) * .55;
-  _p.x += RIG.mx * 0.62 * par; _p.y += RIG.my * 0.34 * par;
-  _t.x -= RIG.mx * 0.20 * par; _t.y -= RIG.my * 0.12 * par;
+  _p.x += (REDUCE ? 0 : RIG.mx) * 0.62 * par; _p.y += (REDUCE ? 0 : RIG.my) * 0.34 * par;
+  _t.x -= (REDUCE ? 0 : RIG.mx) * 0.20 * par; _t.y -= (REDUCE ? 0 : RIG.my) * 0.12 * par;
 
   camera.position.copy(_p);
   camera.lookAt(_t);
@@ -3391,7 +3414,7 @@ const INTRO = { t0: 0 };
 function resize() {
   const w = vpW(), h = vpH();
   document.documentElement.style.setProperty('--vw', w + 'px');
-  renderer.setPixelRatio(Math.min(devicePixelRatio || 1, DPR_CAP) * PERF.scale);
+  renderer.setPixelRatio(pixelRatio() * PERF.scale);
   renderer.setSize(w, h, true);
   camera.aspect = w / h; camera.updateProjectionMatrix();
   const pw = renderer.domElement.width, ph = renderer.domElement.height;
@@ -3413,6 +3436,7 @@ function resize() {
   placeMoon();
   layoutWord();
   measure();
+  if (running && REDUCE) queue(true);
 }
 
 function updateWorld(dt) {
@@ -3509,16 +3533,25 @@ function render() {
 function frame(now) {
   if (!running) return;
   const raw = (now - tPrev) / 1000 || 0;
-  const dt = Math.min(raw, .05);              /* animation never jumps … */
+  const dt = REDUCE ? 0 : Math.min(raw, .05); /* Freeze ambient motion, not the scene or chapter controls. */
   tPrev = now; clock += dt;
   fadeIn = INTRO.t0 ? sat((now - INTRO.t0) / 700) : 1;
 
-  if (!PERF.locked && clock > 2.2) {
-    PERF.acc += raw; PERF.n++;      /* … but the governor reads the truth */
+  if (!PERF.locked && !REDUCE && clock > 2.2) {
+    if (perfSkip > 0) perfSkip--;                 /* just back from another tab: that gap is not the scene's fault */
+    else { PERF.acc += raw; PERF.n++; }           /* … otherwise the governor reads the truth */
     if (PERF.n >= 40 || PERF.acc > .9) {
       const avg = PERF.acc / PERF.n; PERF.acc = 0; PERF.n = 0;
-      if (avg > .0230 && PERF.scale > .55) { PERF.scale = Math.max(.55, PERF.scale * (avg > .05 ? .64 : .85)); resize(); }
-      else if (avg < .0138 && PERF.scale < 1) { PERF.scale = Math.min(1, PERF.scale + .08); resize(); }
+      const target = 1 / (Qp.maxFps || 60);       /* the frame time this tier is aiming for */
+      if (avg > target * 1.38 && PERF.scale > PERF.min) {
+        PERF.scale = Math.max(PERF.min, PERF.scale * (avg > target * 3 ? .64 : .85)); PERF.good = 0; resize();
+      } else if (avg < target * (Qp.maxFps ? 1.1 : .83) && PERF.scale < 1) {
+        /* a capped tier sits right at its target, so it needs a few good windows in a row before growing */
+        if (++PERF.good >= (Qp.maxFps ? 3 : 1)) { PERF.scale = Math.min(1, PERF.scale + .08); PERF.good = 0; resize(); }
+      } else PERF.good = 0;
+      /* still under ~14 fps at the lowest resolution: hand over to the light page instead of stuttering */
+      if (PERF.scale <= PERF.min + .001 && avg > .07) { if (++PERF.bad >= 3) giveUp('too slow even at minimum resolution'); }
+      else PERF.bad = 0;
     }
   }
   RIG.prog = externalProgress;
@@ -3538,7 +3571,21 @@ function frame(now) {
   queue();
 }
 const TIMER = qs('driver', 'raf') === 'timer';
-function queue() { TIMER ? setTimeout(() => frame(performance.now()), 16) : requestAnimationFrame(frame); }
+let frameHandle = 0, lastDraw = 0, perfSkip = 0;
+const onVisibility = () => { PERF.acc = 0; PERF.n = 0; perfSkip = 8; };
+document.addEventListener('visibilitychange', onVisibility);
+function queue(force = false) {
+  if (frameHandle || (REDUCE && !force) || disposed || gaveUp) return;
+  const draw = now => {
+    frameHandle = 0;
+    /* fps cap: skip display refreshes until a frame is due, so weaker tiers hold a steady 30 */
+    if (Qp.maxFps && !force && now - lastDraw < 1000 / Qp.maxFps - 2) { queue(); return; }
+    lastDraw = now;
+    try { frame(now); }
+    catch (err) { console.error('[kage] frame failed', err); giveUp('render error'); }
+  };
+  frameHandle = TIMER ? setTimeout(() => draw(performance.now()), 16) : requestAnimationFrame(draw);
+}
 
 /* ======================================================== 14 · booting */
 const JOBS = [
@@ -3591,11 +3638,16 @@ const JOBS = [
 function boot() {
 
   let i = 0;
+  bootT0 = performance.now();
   const step = () => {
+    if (disposed || gaveUp) return;
+    /* a device that cannot build the scene in time never will: stop spending its battery and memory */
+    if (Qp.bootBudgetMs && performance.now() - bootT0 > Qp.bootBudgetMs) return giveUp('scene took too long to build');
     const j = JOBS[i];
     const done = () => {
       i++;
       const p = i / JOBS.length;
+      onProgress(p);
 
       if (i < JOBS.length) setTimeout(step, 16); else setTimeout(start, 220);
     };
@@ -3603,29 +3655,31 @@ function boot() {
     try { r = j[1](); }
     catch (err) {
       console.error('[kage] job "' + j[0] + '" failed', err);
-      if (i <= 1) return fallback(err);          /* no renderer, no scene */
+      if (i <= 1 || Qp.strict) return fallback(err);   /* no renderer, no scene (or, on weaker tiers, no half-built scene) */
     }
     (r && r.then) ? r.then(done, done) : done();
   };
   setTimeout(step, 60);
 }
 
-function fallback(err) { console.error('Sanctuary could not load', err); }
+function fallback(err) { console.error('Sanctuary could not load', err); giveUp('build failed'); }
 function start() {
+  if (disposed || gaveUp) return;
   addEventListener('resize', resize, { passive: true });
   resize();
   RIG.intro = 1; WORD.reveal = 1.2; fadeIn = 1;
   book = createTome(THREE, camera, coverUrl, pages);
   book.turn(requestedPage);
-  running = true; tPrev = performance.now(); queue();
+  running = true; tPrev = performance.now(); queue(true);
+  onReady();
 }
 boot();
 return {
-  progress(value) { externalProgress = value; },
-  page(index) { requestedPage = index; book?.turn(index); },
+  progress(value) { externalProgress = value; if (running && REDUCE) queue(true); },
+  page(index) { requestedPage = index; book?.turn(index); if (running && REDUCE) queue(true); },
   pages(value) { pages = value; book?.setPages(value); },
   cover(url) { book?.setCover(url); },
   word(value) { if (!scene || !WORD.group) return; scene.remove(WORD.group); wordmark = value; buildWordmark(); layoutWord(); },
-  dispose() { running = false; removeEventListener('resize', resize); book?.dispose(); if (scene) scene.traverse(o => { o.geometry?.dispose(); if (o.material) { const ms = Array.isArray(o.material) ? o.material : [o.material]; ms.forEach(m => { m.map?.dispose(); m.dispose(); }); } }); renderer?.dispose(); }
+  dispose(forceLoss) { if (disposedOnce) return; disposedOnce = true; disposed = true; running = false; document.removeEventListener('visibilitychange', onVisibility); if (lostHandler) canvas.removeEventListener('webglcontextlost', lostHandler); TIMER ? clearTimeout(frameHandle) : cancelAnimationFrame(frameHandle); motionPreference.removeEventListener('change', onMotionPreference); removeEventListener('resize', resize); book?.dispose(); if (scene) scene.traverse(o => { o.geometry?.dispose(); if (o.material) { const ms = Array.isArray(o.material) ? o.material : [o.material]; ms.forEach(m => { m.map?.dispose(); m.dispose(); }); } }); renderer?.dispose(); if (forceLoss) renderer?.forceContextLoss(); }
 };
 }

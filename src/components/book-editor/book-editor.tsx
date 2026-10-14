@@ -140,7 +140,7 @@ export function BookEditor({ book, onChange, saveState, onPreview, history, onHi
     const url = httpsUrl(raw);
     const el = page?.elements.find((e) => e.id === id);
     if (!page || !url || !el || el.type !== 'image') return;
-    commit({ kind: 'element.update', pageId: page.id, before: el, after: { ...el, src: { ...urlRef(url), alt: el.src.alt } }, label: 'Replace image' });
+    commit({ kind: 'element.update', pageId: page.id, before: el, after: { ...el, src: { ...urlRef(url), ...(el.src.alt !== undefined ? { alt: el.src.alt } : {}) } }, label: 'Replace image' });
   }
   const [dragPage, setDragPage] = useState<number | null>(null);
   function dropPage(to: number) {
