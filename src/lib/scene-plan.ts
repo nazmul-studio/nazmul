@@ -1,5 +1,6 @@
 import { useSyncExternalStore } from 'react';
 import { atMost, pickTier, planFor, readSignals, tierFromSearch, type QualityPlan } from './device-tier';
+import { reportOutcome, startVisitReport } from './visit-report';
 
 /**
  * Which quality plan this visitor's device gets, shared by the scene and the flat fallback book.
@@ -42,7 +43,8 @@ export function detectScenePlan(): QualityPlan {
   if (memory.pending) { memory.strikes += 1; memory.pending = false; }
   save(memory);
 
-  const picked = pickTier(readSignals());
+  const signals = readSignals();
+  const picked = pickTier(signals);
   const forced = tierFromSearch(location.search);
   let tier = forced ?? picked.tier;
   let reason = forced ? `forced by ?tier=${forced}` : picked.reason;
@@ -53,6 +55,7 @@ export function detectScenePlan(): QualityPlan {
   }
   const plan = planFor(tier, reason, picked.retry);
   publish(plan);
+  startVisitReport(plan, signals);
   return plan;
 }
 
@@ -68,11 +71,19 @@ export function beginSceneAttempt() {
 /** Call once the scene has run smoothly for a few seconds. */
 export function sceneAttemptHealthy() {
   save({ strikes: 0 });
+  reportOutcome('healthy', { bootMs: lastBootMs });
+}
+
+/** The scene drew its first frame, this many milliseconds after it began building. Sent with the "healthy" report, so a visit costs one write to record and one to finish. */
+let lastBootMs: number | undefined;
+export function sceneReady(bootMs: number) {
+  lastBootMs = bootMs;
 }
 
 /** The scene could not carry on: switch this visitor to light mode, and remember it. */
 export function degradeScene(reason: string) {
   save({ strikes: 0, liteUntil: Date.now() + LITE_MS });
+  reportOutcome('gave_up', { reason });
   publish(planFor('lite', reason, true));
 }
 

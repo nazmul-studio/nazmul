@@ -45,3 +45,46 @@ There was no browser or network in the environment this was written in, so it wa
 unit tests (`device-tier.test.ts`), type/syntax checks and a read-through, not on real phones.
 Thresholds in `PLANS` and `pickTier` are sensible first guesses; real-device testing should adjust them.
 Still unfixable from code: Tailwind v4 needs `@layer` (Chrome 99+), so Chrome older than that loses the utility styles.
+
+---
+
+# Visitor log (Studio → Visitors)
+
+Every visit to the public page is listed in the Studio, newest first: time, IP address, country, device model,
+OS, browser, the tier the visitor got, how the 3D scene went (and why it gave up, if it did), GPU, RAM, cores,
+screen, network type, language and how long the scene took to build.
+
+## How it works
+- The page reports to `POST /api/visit` (`src/lib/visit-report.ts` -> `src/backend/visit-api.ts`), once when it opens
+  and once more when the scene has run smoothly for 4 seconds or has given up.
+- Each visit is one KV entry (`src/backend/visits.ts`) holding the whole record in its metadata, so the Studio lists
+  100 visits with a single KV call. Entries delete themselves after 30 days (`VISIT_TTL_DAYS` in `src/lib/visit-info.ts`).
+- The Studio reads it through `GET /api/studio/visits` (sign-in required); "Clear log" deletes it.
+- A visit with outcome "No result" never reported back: the visitor left early, or the tab crashed. On a device that
+  keeps crashing this is the entry to look for.
+
+## What the browser really tells us about the device
+- **Chrome on Android**: the exact model (e.g. SM-A135F), through User-Agent Client Hints.
+- **iPhone**: never the model. The Studio shows "likely …" and the family that matches the screen size.
+- **Safari / Firefox / desktop**: OS, browser and version, GPU name, RAM (Chromium only), cores, screen. No model.
+
+## Privacy choices (all easy to change)
+- Visitors whose browser sends Do Not Track or Global Privacy Control are not logged (`optedOut` in `visit-report.ts`,
+  and again on the server in `visit-api.ts`).
+- A notice in the page footer says what is logged and for how long.
+- The IP address is stored as received. To store less, shorten it in `build()` in `src/backend/visits.ts`
+  (for example drop the last IPv4 octet). In many places an IP address counts as personal data, so keep the notice
+  accurate and check the rules that apply to your visitors.
+- Only same-origin posts are accepted, bodies are capped at 4 KB, every field is clamped, and one IP address is limited
+  to 40 logged visits an hour per server instance.
+
+## KV write budget
+A logged visit costs two KV writes (record + final outcome). As far as I know the free Cloudflare plan allows about
+1,000 writes a day across the whole namespace, which would be roughly 500 visits a day; those writes are shared with
+publishing from the Studio. If the site gets busy, lower `SAMPLE_RATE` in `src/lib/visit-report.ts` (0.2 logs one visit
+in five). Check the limits on your Cloudflare plan.
+
+## Tested / not tested
+`visit-info.test.ts` and `visits.test.ts` (parsing, clamping, ordering, update rules, size limit, rate limit, clearing)
+were run. The HTTP handler, Studio tab and browser reporter were syntax-checked and read through but not executed:
+open the deployed site on a phone, then Studio -> Visitors, to confirm the first entry appears.

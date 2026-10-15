@@ -7,7 +7,7 @@ import { usePortfolio } from '@/lib/portfolio-content';
 import { resolveBook } from '@/lib/book/migrate';
 import { leavesOf } from '@/lib/book/render';
 import { chapterProgress } from '@/lib/scene-performance';
-import { beginSceneAttempt, degradeScene, detectScenePlan, requestScene, sceneAttemptHealthy, useScenePlan } from '@/lib/scene-plan';
+import { beginSceneAttempt, degradeScene, detectScenePlan, requestScene, sceneAttemptHealthy, sceneReady, useScenePlan } from '@/lib/scene-plan';
 
 type SceneController = ReturnType<typeof import('@/lib/kage-scene')['startSanctuary']>;
 
@@ -78,13 +78,14 @@ export function Sanctuary({page,onChapter}:{page:number;onChapter:(index:number)
     setReady(false);
     const cancelIdle=whenIdle(()=>{
       beginSceneAttempt();
+      const began=performance.now();
       import('@/lib/kage-scene').then(({startSanctuary})=>{
         if(disposed||!canvas.current)return;
         const now=latest.current;
         scene=startSanctuary(canvas.current,now.content.wordmark,now.coverUrl,leavesOf(resolveBook(now.content).pages),{
           plan,
           onProgress:fraction=>poster.current?.style.setProperty('--boot',fraction.toFixed(3)),
-          onReady:()=>{if(disposed)return;setReady(true);healthy=window.setTimeout(sceneAttemptHealthy,4000);},
+          onReady:()=>{if(disposed)return;setReady(true);sceneReady(Math.round(performance.now()-began));healthy=window.setTimeout(sceneAttemptHealthy,4000);},
           onGiveUp:reason=>{if(disposed)return;abandoned=true;degradeScene(reason);},
         });
         control.current=scene;scene.page(now.page);scene.progress(progress.current);

@@ -15,6 +15,7 @@ import {
 } from "./auth";
 import { readBytesLimited } from "./body";
 import { deleteMedia, getMediaStores, listMedia, migrateToR2, storeImage } from "./media";
+import { clearVisits, listVisits } from "./visits";
 import {
   FAILURE_WINDOW,
   MAX_FAILURES,
@@ -202,6 +203,27 @@ async function revisions(request: Request): Promise<Response> {
   return json({ revisions: await readRevisions(kv) });
 }
 
+// --- visitor log (written by the public page through ./visit-api.ts, read here) ---
+
+async function visits(request: Request): Promise<Response> {
+  const denied = await authorize(request);
+  if (denied) return denied;
+  const kv = await getStorage();
+  if (!kv) return json({ error: "storage_unavailable" }, 503);
+  const cursor = new URL(request.url).searchParams.get("cursor") ?? undefined;
+  return json(await listVisits(kv, cursor && cursor.length <= 512 ? cursor : undefined));
+}
+
+/** POST /api/studio/visits/clear: deletes one batch of the log. Call again until `done`. */
+async function clearVisitLog(request: Request): Promise<Response> {
+  if (!isSameOrigin(request)) return forbidden();
+  const denied = await authorize(request);
+  if (denied) return denied;
+  const kv = await getStorage();
+  if (!kv) return json({ error: "storage_unavailable" }, 503);
+  return json(await clearVisits(kv));
+}
+
 // --- images (R2 first, KV as the fallback; see ./media.ts) ---
 
 const MEDIA_NOT_CONFIGURED = { error: "media_not_configured" } as const;
@@ -287,6 +309,10 @@ export async function handleStudioApi(request: Request): Promise<Response | null
         return method === "GET" ? await revisions(request) : notAllowed("GET");
       case "upload":
         return method === "POST" ? await uploadImage(request) : notAllowed("POST");
+      case "visits":
+        return method === "GET" ? await visits(request) : notAllowed("GET");
+      case "visits/clear":
+        return method === "POST" ? await clearVisitLog(request) : notAllowed("POST");
       case "media":
         return method === "GET" ? await listImages(request) : notAllowed("GET");
       case "media/migrate":

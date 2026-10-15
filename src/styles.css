@@ -565,3 +565,20 @@ html[data-tier="lite"] .scene-shade{opacity:.2;}
   }
   body{background-color:#05080c;color:#dfe7e0;}
 }
+
+/* ---- visitor log (Studio) and the notice on the public page ---- */
+.visit-notice{display:block;margin-top:8px;max-width:46ch;font-size:11px;line-height:1.5;opacity:.55;}
+.visit-tools{display:flex;flex-wrap:wrap;gap:8px;}
+.visit-summary{display:flex;flex-wrap:wrap;gap:8px 18px;margin:12px 0 16px;font-size:11px;letter-spacing:.12em;color:var(--muted-foreground);}
+.visit-summary b{margin-left:5px;color:var(--foreground);}
+.visit-list{display:grid;gap:10px;margin:0 0 16px;}
+.visit-row{display:grid;gap:4px;padding:12px 14px;border:1px solid var(--border);border-left-width:3px;border-radius:6px;font-size:13px;line-height:1.45;word-break:break-word;}
+.visit-row.outcome-gave_up{border-left-color:#d33a2f;}
+.visit-row.outcome-started{border-left-color:#c9a24a;}
+.visit-row.outcome-ready,.visit-row.outcome-healthy{border-left-color:#4fae7b;}
+.visit-row.outcome-light{border-left-color:#38bdf8;}
+.visit-top{display:flex;flex-wrap:wrap;justify-content:space-between;gap:4px 14px;}
+.visit-ip{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;}
+.visit-device i{font-style:normal;color:var(--muted-foreground);}
+.visit-specs{font-size:11.5px;color:var(--muted-foreground);}
+.tier-badge{display:inline-block;margin-right:6px;padding:1px 7px;border:1px solid var(--border);border-radius:10px;font-size:10px;letter-spacing:.1em;}

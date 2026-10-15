@@ -7,6 +7,7 @@ import { registerRuntime } from "./backend/env";
 import { handleMediaRequest } from "./backend/media";
 import { withSecurityHeaders } from "./backend/security-headers";
 import { handleStudioApi } from "./backend/studio-api";
+import { handleVisitRequest } from "./backend/visit-api";
 
 type ServerEntry = {
   fetch: (request: Request, env: unknown, ctx: unknown) => Promise<Response> | Response;
@@ -53,6 +54,8 @@ export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
     try {
       registerRuntime(request, env);
+      const visit = await handleVisitRequest(request);
+      if (visit) return withSecurityHeaders(visit, isSecureRequest(request));
       const api = await handleStudioApi(request);
       if (api) return withSecurityHeaders(api, isSecureRequest(request));
       const media = await handleMediaRequest(request);

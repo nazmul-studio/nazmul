@@ -3,6 +3,7 @@
 import type { PortfolioContent } from "./content-model";
 import type { Issue } from "./content-schema";
 import { MAX_DIMENSION, MAX_PIXELS, MAX_UPLOAD_BYTES } from "./media";
+import type { VisitRow } from "./visit-info";
 
 export type SessionInfo = { authenticated: boolean; configured: boolean; missing?: string[]; hints?: string[] };
 export type AdminContent = { version: number; updatedAt: string | null; note?: string; content: PortfolioContent };
@@ -51,6 +52,7 @@ export type UploadResult = {
 export type MediaItem = { name: string; size: number; uploaded: string; storage: "r2" | "kv" };
 export type MediaList = { items: MediaItem[]; truncated: boolean; r2Connected: boolean };
 export type MigrateResult = { moved: number; failed: number; remaining: number };
+export type VisitList = { items: VisitRow[]; nextCursor: string | null; supported: boolean };
 
 /**
  * The notice to show when an upload had to be kept outside R2, or null when it went to R2 as normal.
@@ -118,6 +120,10 @@ export const studioApi = {
   listMedia: () => call<MediaList>("media"),
   /** Moves a batch of images from the backup storage into R2; call again while `remaining` is above 0. */
   migrateMedia: () => call<MigrateResult>("media/migrate", { method: "POST", body: {} }),
+  /** The visitor log, newest first; pass the previous `nextCursor` for the next page. */
+  visits: (cursor?: string | null) => call<VisitList>(cursor ? `visits?cursor=${encodeURIComponent(cursor)}` : "visits"),
+  /** Deletes one batch of the log; call again until `done`. */
+  clearVisits: () => call<{ deleted: number; done: boolean }>("visits/clear", { method: "POST", body: {} }),
   deleteMedia: (name: string) => call<{ ok: true }>(`media/${encodeURIComponent(name)}`, { method: "DELETE" }),
 };
 
