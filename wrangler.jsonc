@@ -1,0 +1,17 @@
+// Cloudflare Worker settings. The Studio (content, sign-in sessions) and the visitor log keep their data in the
+// KV namespace bound as CONTENT below. See DEPLOY.md.
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+
+  // Must match the name of this Worker under Workers & Pages in the Cloudflare dashboard.
+  // If yours is different, change this one line.
+  "name": "book-weaver-portfolio",
+
+  "kv_namespaces": [
+    // The namespace called "personal". The binding name must stay exactly CONTENT: the server looks it up by that name.
+    { "binding": "CONTENT", "id": "d1bcffb4466d4b0ea15f760c264d3e80" }
+  ]
+
+  // Image uploads (optional, see DEPLOY.md, "Image uploads (R2)"). Create the bucket first, then remove the // marks:
+  // , "r2_buckets": [{ "binding": "MEDIA", "bucket_name": "book-weaver-media" }]
+}
